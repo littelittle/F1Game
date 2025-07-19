@@ -1,0 +1,72 @@
+#pragma once
+#include <string>
+#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <GL/glew.h>
+#include <shader.h>
+#include <wheel.h>
+
+class Car {
+public:
+    Car();
+    ~Car();
+
+    void draw(Shader& carshader);
+    void update(float deltaTime);
+ 
+    // Setters
+    void setPosition(const glm::vec3& newPosition);
+    void setVelocity(const glm::vec3& newVelocity);
+    void setColor(const glm::vec3& newColor);
+    void setTexture(const std::string& texturePath); // Will load texture and set textureID
+    void setScale(const glm::vec3& newScale); // Optional, for scaling the model
+
+    // Controls
+    void updateAcceleration(const glm::vec3& deltaAcceleration);
+    void addBreak(bool);
+    void turnLeft(bool);
+    void turnRight(bool);
+
+    // Getters (const-correct for safety)
+    glm::vec3 getPosition() const { return position; }
+    glm::vec3 getVelocity() const { return velocity; }
+    glm::vec3 getAcceleration() const { return acceleration; }
+    glm::vec3 getColor() const { return color; }
+
+    // Model loading and GPU buffer setup
+    bool loadModel(); // Returns true on success
+    void setupGPUBuffers(); // Pushes loaded vertices/indices to GPU
+
+private:
+    glm::vec3 position;
+    glm::vec3 velocity;
+    glm::vec3 acceleration; // Added
+    glm::vec3 color;        // Added
+    glm::vec3 scale;        // Optional, added
+    
+    float breakTime;
+    bool breakStatus;
+    float angle;
+
+    Wheel leftWheel;
+    Wheel rightWheel;
+
+    // Model Data
+    std::vector<glm::vec3> vertices; 
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> normals;
+    std::vector<unsigned int> indices;
+
+    // OpenGL handles
+    GLuint VAO;
+    GLuint vertexVBO, uvVBO, normalVBO;
+    GLuint EBO;
+    GLuint textureID; // Added for texture
+
+    // Transformation Matrix
+    glm::mat4 modelMatrix; // Added
+    void updateModelMatrix(); // Helper to update the modelMatrix based on position, rotation, scale
+    void rotateModelMatrixAroundY_Simplified(float angleDegree);
+};
