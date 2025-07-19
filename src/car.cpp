@@ -163,7 +163,7 @@ void Car::setScale(const glm::vec3& newScale) {
 }
 
 bool Car::loadModel() {
-    const char* mainModelPath = "C:\\Users\\27217\\playground\\Cpp\\F1\\assets\\F1_car\\C44\\seperated_mainbody.obj";
+    const char* mainModelPath = "assets/F1_car/C44/seperated_mainbody.obj";
     std::ifstream file(mainModelPath);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open OBJ file: " << mainModelPath << std::endl;

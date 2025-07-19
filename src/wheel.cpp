@@ -80,8 +80,8 @@ void Wheel::setupGPUBuffers() {
 
 bool Wheel::loadModel() {
     const char* modelPath;
-    if(wheelConfig==LEFTWHEEL) modelPath = "C:\\Users\\27217\\playground\\Cpp\\F1\\assets\\F1_car\\C44\\seperated_left_break.obj";
-    else modelPath = "C:\\Users\\27217\\playground\\Cpp\\F1\\assets\\F1_car\\C44\\seperated_right_break.obj";
+    if(wheelConfig==LEFTWHEEL) modelPath = "assets/F1_car/C44/seperated_left_break.obj";
+    else modelPath = "assets/F1_car/C44/seperated_right_break.obj";
     std::ifstream file(modelPath);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open OBJ file: " << modelPath << std::endl;
