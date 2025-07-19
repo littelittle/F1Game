@@ -1,19 +1,25 @@
-#include "Wheel.h" 
+#include "wheel.h" 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <filesystem>
+#include "utils.h"
+#include "car.h"
 
 
-Wheel::Wheel(int wConfig)
-    : position(0.0f, 0.0f, 0.0f),
-      color(0.5f, 0.5f, 0.0f), // Default black color
+Wheel::Wheel(int wConfig, const Car& car)
+    : car(car),
+      position(0.0f, 0.0f, 0.0f),
+      color(1.0f, 0.0f, 0.0f), // Default black color
       scale(1.0f, 1.0f, 1.0f)
 {
     wheelConfig = wConfig;
+    modelMatrix = glm::mat4(1.0f);
+    steeringMatrix = glm::mat4(1.0f);
     updateModelMatrix();
+    shift = (wConfig==LEFTWHEEL) ? glm::vec3(2.7f, 0.0f, 1.2f) : glm::vec3(2.7f, 0.0f, -1.2f);
 }
 
 Wheel::~Wheel() {
@@ -36,9 +42,11 @@ Wheel::~Wheel() {
 }
 
 void Wheel::updateModelMatrix() {
-    modelMatrix[3] = glm::vec4(position, 1.0f);
+    modelMatrix = car.getModelMatrix();
+
     // Add rotation (e.g., based on velocity direction or explicit rotation variables)
-    // modelMatrix = glm::rotate(modelMatrix, glm::radians(rotationAngle), rotationAxis);
+    modelMatrix = modelMatrix * steeringMatrix;
+
     modelMatrix = glm::scale(modelMatrix, scale);
 }
 
@@ -185,6 +193,10 @@ bool Wheel::loadModel() {
 
 
 void Wheel::draw(Shader& carshader) {
+
+    // insure that this is updated
+    updateModelMatrix();
+
     if (VAO == 0) {
         std::cerr << "Warning: Car VAO is not set up. Call setupGPUBuffers() first." << std::endl;
         return;
@@ -194,7 +206,8 @@ void Wheel::draw(Shader& carshader) {
     // carshader.use();
 
     // Pass the model matrix to the shader
-    // carshader.setMat4("model", modelMatrix);
+    carshader.setMat4("model", modelMatrix);
+    printMat4(modelMatrix);
     carshader.setVec3("objectColor", color);
 
     // Bind the VAO and draw
@@ -208,4 +221,15 @@ void Wheel::draw(Shader& carshader) {
     glBindVertexArray(0); // Unbind VAO
 
     // glUseProgram(0); // Unuse shader program.
+}
+
+void Wheel::rotateModelMatrixAroundY_Simplified(float angleDegree){
+    glm::mat4 translate_to_origin = glm::translate(glm::mat4(1.0f), -shift);
+
+    glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegree), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glm::mat4 translate_back = glm::translate(glm::mat4(1.0f), shift);
+
+    steeringMatrix = steeringMatrix * translate_back * rotation_matrix * translate_to_origin;
+
 }

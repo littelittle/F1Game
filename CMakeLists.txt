@@ -15,6 +15,7 @@ add_executable(F1
     src/shader.cpp
     src/circuit.cpp
     src/wheel.cpp
+    src/utils.cpp
                 )
 
 

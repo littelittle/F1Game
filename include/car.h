@@ -34,6 +34,7 @@ public:
     glm::vec3 getVelocity() const { return velocity; }
     glm::vec3 getAcceleration() const { return acceleration; }
     glm::vec3 getColor() const { return color; }
+    glm::mat4 getModelMatrix() const { return modelMatrix; }
 
     // Model loading and GPU buffer setup
     bool loadModel(); // Returns true on success

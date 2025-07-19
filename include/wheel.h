@@ -7,12 +7,14 @@
 #include <GL/glew.h>
 #include <Shader.h>
 
+class Car;
+
 #define LEFTWHEEL 1
 #define RIGHTWHEEL 2
 
 class Wheel {
 public:
-    Wheel(int wheelConfig);
+    Wheel(int wheelConfig, const Car& car);
     ~Wheel();
     void draw(Shader& carshader);
     void update(float deltaTime);
@@ -39,9 +41,11 @@ public:
     void setupGPUBuffers(); // Pushes loaded vertices/indices to GPU
 
 private:
+    const Car& car;
     glm::vec3 position;
     glm::vec3 color;        // Added
     glm::vec3 scale;        // Optional, added
+    glm::vec3 shift;        // the shift from the center of the car
     
     int wheelConfig;
     float breakTime;
@@ -63,6 +67,9 @@ private:
 
     // Transformation Matrix
     glm::mat4 modelMatrix; // Added
+    glm::mat4 steeringMatrix;
     void updateModelMatrix(); // Helper to update the modelMatrix based on position, rotation, scale
     void rotateModelMatrixAroundY_Simplified(float angleDegree);
+
+    friend class Car;
 };

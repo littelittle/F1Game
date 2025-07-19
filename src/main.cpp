@@ -168,17 +168,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     HEIGHT = height; // Update global HEIGHT
 }
 
-void printMat4(const glm::mat4& mat) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            // mat[j][i] 访问的是第 j 列的第 i 行元素
-            // 传统数学表示中我们习惯 mat[行][列]，所以这里反过来是为了更直观地输出
-            std::cout << mat[j][i] << "\t";
-        }
-        std::cout << std::endl;
-    }
-}
-
 int main() {
     // 1. Initialize GLFW
     if (!glfwInit()) {

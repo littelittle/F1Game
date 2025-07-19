@@ -15,7 +15,7 @@ Car::Car()
       scale(1.0f, 1.0f, 1.0f),
       breakTime(0.0f),
       angle(0.0f),
-      leftWheel(LEFTWHEEL), rightWheel(RIGHTWHEEL),
+      leftWheel(LEFTWHEEL, *this), rightWheel(RIGHTWHEEL, *this),
       VAO(0), vertexVBO(0), uvVBO(0), normalVBO(0), textureID(0)
 {
     modelMatrix = glm::mat4(1.0f);
@@ -48,7 +48,7 @@ void Car::update(float deltaTime) {
     if (breakStatus ) {
         if (glm::length(acceleration)*deltaTime > glm::length(velocity)){
             // Make sure not go backward
-            std::cout << "reset to 0!!!" << std::endl;
+            // std::cout << "reset to 0!!!" << std::endl;
             acceleration = {0, 0, 0};
             velocity = {0, 0, 0};
         }
@@ -141,14 +141,18 @@ void Car::rotateModelMatrixAroundY_Simplified(float angleDegree) {
 void Car::turnLeft(bool status){
     if (status){
         // std::cout << "left!" << modelMatrix[0][0] << std::endl;
-        rotateModelMatrixAroundY_Simplified(5);
+        rotateModelMatrixAroundY_Simplified(1);
         // std::cout << "finish!" << modelMatrix[0][0] << std::endl;
+        leftWheel.rotateModelMatrixAroundY_Simplified(3);
+        rightWheel.rotateModelMatrixAroundY_Simplified(3);
     }
 }
 
 void Car::turnRight(bool status){
     if (status){
-        rotateModelMatrixAroundY_Simplified(-5);
+        rotateModelMatrixAroundY_Simplified(-1);
+        leftWheel.rotateModelMatrixAroundY_Simplified(-3);
+        rightWheel.rotateModelMatrixAroundY_Simplified(-3);
     }
 }
 
