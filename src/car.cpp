@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <cmath>
 
 // Constructor: Initialize member variables
 Car::Car()
@@ -14,6 +15,7 @@ Car::Car()
       color(1.0f, 0.0f, 0.0f), // Default red color
       scale(1.0f, 1.0f, 1.0f),
       breakTime(0.0f),
+      angularVelocity(0.0f),
       angle(0.0f),
       leftWheel(LEFTWHEEL, *this), rightWheel(RIGHTWHEEL, *this),
       VAO(0), vertexVBO(0), uvVBO(0), normalVBO(0), textureID(0)
@@ -45,7 +47,7 @@ Car::~Car() {
 // Update the car's state based on time
 void Car::update(float deltaTime) {
     // Basic Euler integration for physics
-    if (breakStatus ) {
+    if (breakStatus) {
         if (glm::length(acceleration)*deltaTime > glm::length(velocity)){
             // Make sure not go backward
             // std::cout << "reset to 0!!!" << std::endl;
@@ -55,6 +57,13 @@ void Car::update(float deltaTime) {
         else velocity += acceleration * deltaTime;
     }
     else velocity += glm::mat3(modelMatrix) * acceleration * deltaTime;
+
+    angularVelocity = std::tan(glm::radians(leftWheel.angle))*glm::length(velocity)/FRONTAXIS;
+
+    angle = angularVelocity * deltaTime;
+    rotateModelMatrixAroundY_Simplified(angle);
+
+    std::cout << angle << std::endl;
 
     position += velocity * deltaTime;
 
@@ -124,14 +133,14 @@ void Car::addBreak(bool status){
     }
 }
 
-void Car::rotateModelMatrixAroundY_Simplified(float angleDegree) {
+void Car::rotateModelMatrixAroundY_Simplified(float angleRad) {
     // glm::rotate(matrix, angle_radians, axis_vector)
     // 直接对 modelMatrix 进行旋转操作
     // 角度转换为弧度
 
     // modelMatrix = glm::rotate(modelMatrix, glm::radians(angleDegree), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegree), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angleRad, glm::vec3(0.0f, 1.0f, 0.0f));
 
     modelMatrix = modelMatrix * rotationMatrix; 
 
@@ -141,18 +150,18 @@ void Car::rotateModelMatrixAroundY_Simplified(float angleDegree) {
 void Car::turnLeft(bool status){
     if (status){
         // std::cout << "left!" << modelMatrix[0][0] << std::endl;
-        rotateModelMatrixAroundY_Simplified(1);
+        // rotateModelMatrixAroundY_Simplified(1);
         // std::cout << "finish!" << modelMatrix[0][0] << std::endl;
-        leftWheel.rotateModelMatrixAroundY_Simplified(3);
-        rightWheel.rotateModelMatrixAroundY_Simplified(3);
+        leftWheel.rotateModelMatrixAroundY_Simplified(5);
+        rightWheel.rotateModelMatrixAroundY_Simplified(5);
     }
 }
 
 void Car::turnRight(bool status){
     if (status){
-        rotateModelMatrixAroundY_Simplified(-1);
-        leftWheel.rotateModelMatrixAroundY_Simplified(-3);
-        rightWheel.rotateModelMatrixAroundY_Simplified(-3);
+        // rotateModelMatrixAroundY_Simplified(-1);
+        leftWheel.rotateModelMatrixAroundY_Simplified(-5);
+        rightWheel.rotateModelMatrixAroundY_Simplified(-5);
     }
 }
 

@@ -8,6 +8,8 @@
 #include <shader.h>
 #include <wheel.h>
 
+#define FRONTAXIS 2.7
+
 class Car {
 public:
     Car();
@@ -49,6 +51,7 @@ private:
     
     float breakTime;
     bool breakStatus;
+    float angularVelocity;
     float angle;
 
     Wheel leftWheel;

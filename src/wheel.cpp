@@ -13,7 +13,8 @@ Wheel::Wheel(int wConfig, const Car& car)
     : car(car),
       position(0.0f, 0.0f, 0.0f),
       color(1.0f, 0.0f, 0.0f), // Default black color
-      scale(1.0f, 1.0f, 1.0f)
+      scale(1.0f, 1.0f, 1.0f),
+      angle(0.0f)
 {
     wheelConfig = wConfig;
     modelMatrix = glm::mat4(1.0f);
@@ -207,7 +208,7 @@ void Wheel::draw(Shader& carshader) {
 
     // Pass the model matrix to the shader
     carshader.setMat4("model", modelMatrix);
-    printMat4(modelMatrix);
+    // printMat4(modelMatrix);
     carshader.setVec3("objectColor", color);
 
     // Bind the VAO and draw
@@ -231,5 +232,6 @@ void Wheel::rotateModelMatrixAroundY_Simplified(float angleDegree){
     glm::mat4 translate_back = glm::translate(glm::mat4(1.0f), shift);
 
     steeringMatrix = steeringMatrix * translate_back * rotation_matrix * translate_to_origin;
+    angle += angleDegree;
 
 }
