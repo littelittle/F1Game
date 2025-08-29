@@ -17,6 +17,8 @@ Car::Car()
       breakTime(0.0f),
       angularVelocity(0.0f),
       angle(0.0f),
+      throttleStatus(false), breakStatus(false), leftStatus(false), rightStatus(false),
+      carAudio(),
       leftWheel(LEFTWHEEL, *this), rightWheel(RIGHTWHEEL, *this),
       VAO(0), vertexVBO(0), uvVBO(0), normalVBO(0), textureID(0)
 {
@@ -42,32 +44,74 @@ Car::~Car() {
     if (textureID != 0) {
         glDeleteTextures(1, &textureID);
     }
+    
+    carAudio.shutdown();
 }
 
 // Update the car's state based on time
 void Car::update(float deltaTime) {
-    // Basic Euler integration for physics
-    if (breakStatus) {
-        if (glm::length(acceleration)*deltaTime > glm::length(velocity)){
-            // Make sure not go backward
-            // std::cout << "reset to 0!!!" << std::endl;
-            acceleration = {0, 0, 0};
-            velocity = {0, 0, 0};
-        }
-        else velocity += acceleration * deltaTime;
+    // Apply throttle force if throttle is pressed
+    if (throttleStatus) {
+        glm::vec3 forwardDirection = glm::normalize(glm::vec3(modelMatrix[0]));
+        acceleration += forwardDirection * 100.0f; // Throttle force
     }
-    else velocity += glm::mat3(modelMatrix) * acceleration * deltaTime;
+    else{
+        // std::cout << "no throttle" << std::endl;
+    }
+    
+    // Apply braking force if brake is pressed
+    if (breakStatus) {
+        if (glm::length(velocity) > 0.0f) {
+            glm::vec3 brakeDirection = -glm::normalize(velocity);
+            acceleration += brakeDirection * 10.0f; // Braking force
+        }
+    }
+    
+    // Apply friction/drag forces (always present)
+    if (glm::length(velocity) > 0.0f) {
+        glm::vec3 dragDirection = -glm::normalize(velocity);
+        acceleration += dragDirection * 2.0f * glm::length(velocity); // Velocity-dependent drag
+    }
+    
+    // Apply steering forces if turning
+    if (leftStatus || rightStatus) {
+        float steeringAngle = leftStatus ? 2.5f : -2.5f;
+        leftWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
+        rightWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
+    }
+    
+    // Euler integration for physics
+    velocity += acceleration * deltaTime;
+    // std::cout << "Velocity: " << glm::length(velocity) << " Acceleration:"<< glm::length(acceleration) << std::endl;
 
-    angularVelocity = std::tan(glm::radians(leftWheel.angle))*glm::length(velocity)/FRONTAXIS;
 
+    // for the angular velocity
+    angularVelocity = std::tan(glm::radians(leftWheel.angle)) * glm::length(velocity) / FRONTAXIS;
     angle = angularVelocity * deltaTime;
+    // std::cout << "wheelangle: " << leftWheel.angle << ", Angular velocity: " << angularVelocity << ", Angle: " << angle << std::endl;
+    // std::cout << "velocity: " << glm::length(velocity) << std::endl;
     rotateModelMatrixAroundY_Simplified(angle);
-
-    std::cout << angle << std::endl;
-
+    
+    // Clamp velocity to reasonable limits
+    float maxSpeed = 300.0f;
+    if (glm::length(velocity) > maxSpeed) {
+        velocity = glm::normalize(velocity) * maxSpeed;
+    }
+    
     position += velocity * deltaTime;
+    
+    // Reset acceleration for next frame
+    acceleration = glm::vec3(0.0f);
 
-    updateModelMatrix(); // Update model matrix after position changes
+    // Update model matrix after position changes
+    updateModelMatrix();
+    
+    // Update audio based on car state
+    float throttleIntensity = throttleStatus ? 1.0f : 0.0f;
+    float brakeIntensity = breakStatus ? 1.0f : 0.0f;
+    float rpm = glm::length(velocity) * 20.0f; // Convert speed to RPM
+    
+    carAudio.update(throttleIntensity, brakeIntensity, rpm);
 }
 
 // Draw the car
@@ -123,14 +167,6 @@ void Car::updateAcceleration(const glm::vec3& deltaAcceleration) {
 
 void Car::addBreak(bool status){
     breakStatus = status;
-    if (status){
-        if (glm::length(velocity)){
-            acceleration = -5.0f * velocity/glm::length(velocity);
-        }
-    }
-    else{
-        acceleration = {0, 0, 0};
-    }
 }
 
 void Car::rotateModelMatrixAroundY_Simplified(float angleRad) {
@@ -176,6 +212,11 @@ void Car::setScale(const glm::vec3& newScale) {
 }
 
 bool Car::loadModel() {
+    // Initialize audio system when loading the model
+    if (!carAudio.initialize()) {
+        std::cerr << "Warning: Failed to initialize car audio system" << std::endl;
+    }
+    
     const char* mainModelPath = "assets/F1_car/C44/seperated_mainbody.obj";
     std::ifstream file(mainModelPath);
     if (!file.is_open()) {
@@ -354,4 +395,28 @@ void Car::updateModelMatrix() {
     // Add rotation (e.g., based on velocity direction or explicit rotation variables)
     // modelMatrix = glm::rotate(modelMatrix, glm::radians(rotationAngle), rotationAxis);
     modelMatrix = glm::scale(modelMatrix, scale);
+}
+
+void Car::setPhaseBack(){
+    throttleStatus = false;
+    breakStatus = false;
+    leftStatus = false;
+    rightStatus = false;
+}
+
+// Phase register
+void Car::setThrottle(bool status){
+    throttleStatus = status;
+}
+
+void Car::setBreak(bool status){
+    breakStatus = status;
+}
+
+void Car::setDeltaLeft(bool status){
+    leftStatus = status;
+}
+
+void Car::setDeltaRight(bool status){
+    rightStatus = status;
 }

@@ -192,7 +192,6 @@ bool Wheel::loadModel() {
     return true;
 }
 
-
 void Wheel::draw(Shader& carshader) {
 
     // insure that this is updated
@@ -225,13 +224,19 @@ void Wheel::draw(Shader& carshader) {
 }
 
 void Wheel::rotateModelMatrixAroundY_Simplified(float angleDegree){
+
+    float trueSteeringAngle;
+
+    if (angleDegree > 0) trueSteeringAngle = std::min(std::abs(angleDegree), MAXSTEERINGANGLE - angle);
+    else trueSteeringAngle = -std::min(std::abs(angleDegree), MAXSTEERINGANGLE + angle);
+
     glm::mat4 translate_to_origin = glm::translate(glm::mat4(1.0f), -shift);
 
-    glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(angleDegree), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotation_matrix = glm::rotate(glm::mat4(1.0f), glm::radians(trueSteeringAngle), glm::vec3(0.0f, 1.0f, 0.0f));
 
     glm::mat4 translate_back = glm::translate(glm::mat4(1.0f), shift);
 
     steeringMatrix = steeringMatrix * translate_back * rotation_matrix * translate_to_origin;
-    angle += angleDegree;
+    angle += trueSteeringAngle;
 
 }

@@ -7,6 +7,7 @@
 #include <GL/glew.h>
 #include <shader.h>
 #include <wheel.h>
+#include "audio.h"
 
 #define FRONTAXIS 2.7
 
@@ -31,6 +32,12 @@ public:
     void turnLeft(bool);
     void turnRight(bool);
 
+    // PhaseRegisters
+    void setThrottle(bool);
+    void setBreak(bool);
+    void setDeltaLeft(bool);
+    void setDeltaRight(bool);
+
     // Getters (const-correct for safety)
     glm::vec3 getPosition() const { return position; }
     glm::vec3 getVelocity() const { return velocity; }
@@ -49,10 +56,17 @@ private:
     glm::vec3 color;        // Added
     glm::vec3 scale;        // Optional, added
     
-    float breakTime;
+    // Phase register
+    bool throttleStatus;
     bool breakStatus;
+    bool leftStatus;
+    bool rightStatus;
     float angularVelocity;
     float angle;
+    float breakTime;
+    
+    // Audio
+    CarAudio carAudio;
 
     Wheel leftWheel;
     Wheel rightWheel;
@@ -73,4 +87,5 @@ private:
     glm::mat4 modelMatrix; // Added
     void updateModelMatrix(); // Helper to update the modelMatrix based on position, rotation, scale
     void rotateModelMatrixAroundY_Simplified(float angleDegree);
+    void setPhaseBack();
 };

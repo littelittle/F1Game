@@ -11,6 +11,7 @@ class Car;
 
 #define LEFTWHEEL 1
 #define RIGHTWHEEL 2
+#define MAXSTEERINGANGLE 30.0f
 
 class Wheel {
 public:

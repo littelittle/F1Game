@@ -8,6 +8,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Prefer static libraries where p
 
 find_package(GLEW CONFIG REQUIRED)
 find_package(GLFW3 CONFIG REQUIRED)
+find_package(OpenAL CONFIG REQUIRED)
 
 add_executable(F1 
     src/main.cpp
@@ -16,6 +17,7 @@ add_executable(F1
     src/circuit.cpp
     src/wheel.cpp
     src/utils.cpp
+    src/audio.cpp
                 )
 
 
@@ -34,6 +36,7 @@ target_link_libraries(F1 PRIVATE
     GLEW::glew
     glfw 
     opengl32
+    OpenAL::OpenAL
     ) 
 
 target_include_directories(F1 PUBLIC

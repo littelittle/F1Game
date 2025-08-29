@@ -26,10 +26,10 @@ glm::vec3 cameraPos   = glm::vec3(-8.0f, 2.0f, 0.0f);
 // Camera looks towards negative Z-axis by default
 glm::vec3 cameraFront = glm::vec3(1.0f, -0.2f, 0.0f); 
 // Camera's up direction
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);   
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+// Camera mode: 0 = static, 1 = follow car
+int cameraMode = 0;   
 
-// Ball 2 position (controllable ball)
-glm::vec3 ball2Position = glm::vec3(0.0f, 0.0f, 0.0f);
 
 // Create a Car object
 Car myCar;
@@ -43,62 +43,6 @@ float ballSpeed = 1.5f;   // Units per second
 float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-/**
- * @brief Generates vertices and indices for a 3D sphere.
- * @param radius The radius of the sphere.
- * @param slices The number of divisions around the sphere's circumference (longitude).
- * @param stacks The number of divisions along the sphere's height (latitude).
- * @param vertices Output vector to store vertex positions (x, y, z).
- * @param indices Output vector to store indices for drawing triangles.
- */
-void generateSphere(float radius, int slices, int stacks, std::vector<float>& vertices, std::vector<unsigned int>& indices) {
-    vertices.clear();
-    indices.clear();
-
-    // Generate vertices
-    for (int i = 0; i <= stacks; ++i) {
-        // Calculate vertical angle (phi) from 0 to PI
-        float V = (float)i / (float)stacks;
-        float phi = V * M_PI; 
-
-        for (int j = 0; j <= slices; ++j) {
-            // Calculate horizontal angle (theta) from 0 to 2*PI
-            float U = (float)j / (float)slices;
-            float theta = U * (M_PI * 2); 
-
-            // Calculate spherical coordinates to Cartesian coordinates
-            float x = radius * sin(phi) * cos(theta);
-            float y = radius * cos(phi);
-            float z = radius * sin(phi) * sin(theta);
-
-            vertices.push_back(x);
-            vertices.push_back(y);
-            vertices.push_back(z);
-        }
-    }
-
-    // Generate indices for triangles
-    for (int i = 0; i < stacks; ++i) {
-        for (int j = 0; j < slices; ++j) {
-            // Get indices for the four corners of a quad
-            unsigned int p1 = i * (slices + 1) + j;
-            unsigned int p2 = p1 + (slices + 1);
-            unsigned int p3 = p1 + 1;
-            unsigned int p4 = p2 + 1;
-
-            // Form two triangles from the quad
-            // Triangle 1
-            indices.push_back(p1);
-            indices.push_back(p2);
-            indices.push_back(p3);
-
-            // Triangle 2
-            indices.push_back(p3);
-            indices.push_back(p2);
-            indices.push_back(p4);
-        }
-    }
-}
 
 /**
  * @brief Keyboard input callback function.
@@ -128,26 +72,41 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
         // Brake & Throttle & Wheel controls (Arrow keys)
         if (key == GLFW_KEY_UP){ // Move ball up
-            ball2Position.y += ballSpeed * deltaTime;
-            myCar.updateAcceleration({1, 0, 0});
+            myCar.setThrottle(true);
+            // myCar.updateAcceleration({1, 0, 0});
         }
         if (key == GLFW_KEY_DOWN){ // Move ball down
-            ball2Position.y -= ballSpeed * deltaTime;
-            myCar.addBreak(true);
+            myCar.setBreak(true);
+            // myCar.addBreak(true);
         }
         if (key == GLFW_KEY_LEFT){ // Move ball left
-            ball2Position.x -= ballSpeed * deltaTime;
-            myCar.turnLeft(true);
+            myCar.setDeltaLeft(true);
+            // myCar.turnLeft(true);
         }
         if (key == GLFW_KEY_RIGHT){ // Move ball right
-            ball2Position.x += ballSpeed * deltaTime;
-            myCar.turnRight(true);
+            myCar.setDeltaRight(true);
+            // myCar.turnRight(true);
         }
+        
     }
 
     if (action == GLFW_RELEASE){
         if (key == GLFW_KEY_DOWN){
-            myCar.addBreak(false);
+            myCar.setBreak(false);
+        }
+        if (key == GLFW_KEY_UP){
+            myCar.setThrottle(false);
+        }
+        if (key == GLFW_KEY_LEFT){
+            myCar.setDeltaLeft(false);
+        }
+        if (key == GLFW_KEY_RIGHT){
+            myCar.setDeltaRight(false);
+        }
+        // Camera mode switch (C key)
+        if (key == GLFW_KEY_C) {
+            cameraMode = !cameraMode; // Toggle between 0 and 1
+            std::cout << "Camera mode: " << (cameraMode == 0 ? "Static" : "Follow Car") << std::endl;
         }
     }
 }
@@ -277,7 +236,18 @@ int main() {
         // --- View Matrix (Camera Transformation, calculated once per frame) ---
         // Create the view matrix using the LookAt function
         // Parameters: Camera Position, Point Camera is Looking At, Camera Up Vector
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glm::vec3 viewTarget = cameraPos + cameraFront;
+        
+        // If in follow mode, update camera position to follow the car
+        if (cameraMode == 1) {
+            glm::vec3 carPos = myCar.getPosition();
+            glm::mat3 carOrientation = glm::mat3(myCar.getModelMatrix());
+            cameraPos = carPos + carOrientation * glm::vec3(-8.0f, 2.0f, 0.0f); // Follow behind and above the car
+            viewTarget = carPos; // Look at the car
+        }
+        std::cout<<"camera mode: "<<cameraMode<<std::endl;
+        
+        glm::mat4 view = glm::lookAt(cameraPos, viewTarget, cameraUp);
 
         glBindVertexArray(0); // Unbind VAO to prevent accidental modification
 
