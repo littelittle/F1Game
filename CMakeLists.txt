@@ -18,6 +18,7 @@ add_executable(F1
     src/wheel.cpp
     src/utils.cpp
     src/audio.cpp
+    # src/dashboard.cpp
                 )
 
 
@@ -25,7 +26,6 @@ add_executable(F1
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Debug)
 set(ASSETS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
 file(COPY ${ASSETS_DIR} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-
 
 message(STATUS "Copying assets from ${ASSETS_DIR} to ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 

@@ -75,7 +75,7 @@ void Car::update(float deltaTime) {
     
     // Apply steering forces if turning
     if (leftStatus || rightStatus) {
-        float steeringAngle = leftStatus ? 2.5f : -2.5f;
+        float steeringAngle = leftStatus ? 1.0f : -1.0f;
         leftWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
         rightWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
     }
@@ -109,7 +109,7 @@ void Car::update(float deltaTime) {
     // Update audio based on car state
     float throttleIntensity = throttleStatus ? 1.0f : 0.0f;
     float brakeIntensity = breakStatus ? 1.0f : 0.0f;
-    float rpm = glm::length(velocity) * 20.0f; // Convert speed to RPM
+    int rpm = int(glm::length(velocity) * 20) ; // Convert speed to RPM
     
     carAudio.update(throttleIntensity, brakeIntensity, rpm);
 }
@@ -122,12 +122,13 @@ void Car::draw(Shader& carshader) {
     }
 
     // Use the shader program
-    // carshader.use();
+    carshader.use();
 
     // Pass the model matrix to the shader
     carshader.setMat4("model", modelMatrix);
     carshader.setVec3("objectColor", color);
 
+    // JUST FOR DEBUGGING
     // for (int i = 0; i < 4; ++i) {
     //     for (int j = 0; j < 4; ++j) {
     //         std::cout << modelMatrix[j][i] << "\t";
@@ -183,23 +184,23 @@ void Car::rotateModelMatrixAroundY_Simplified(float angleRad) {
     velocity = glm::mat3(modelMatrix) * glm::length(velocity) * glm::vec3({1,0,0});
 }
 
-void Car::turnLeft(bool status){
-    if (status){
-        // std::cout << "left!" << modelMatrix[0][0] << std::endl;
-        // rotateModelMatrixAroundY_Simplified(1);
-        // std::cout << "finish!" << modelMatrix[0][0] << std::endl;
-        leftWheel.rotateModelMatrixAroundY_Simplified(5);
-        rightWheel.rotateModelMatrixAroundY_Simplified(5);
-    }
-}
+// void Car::turnLeft(bool status){
+//     if (status){
+//         // std::cout << "left!" << modelMatrix[0][0] << std::endl;
+//         // rotateModelMatrixAroundY_Simplified(1);
+//         // std::cout << "finish!" << modelMatrix[0][0] << std::endl;
+//         leftWheel.rotateModelMatrixAroundY_Simplified(5);
+//         rightWheel.rotateModelMatrixAroundY_Simplified(5);
+//     }
+// }
 
-void Car::turnRight(bool status){
-    if (status){
-        // rotateModelMatrixAroundY_Simplified(-1);
-        leftWheel.rotateModelMatrixAroundY_Simplified(-5);
-        rightWheel.rotateModelMatrixAroundY_Simplified(-5);
-    }
-}
+// void Car::turnRight(bool status){
+//     if (status){
+//         // rotateModelMatrixAroundY_Simplified(-1);
+//         leftWheel.rotateModelMatrixAroundY_Simplified(-5);
+//         rightWheel.rotateModelMatrixAroundY_Simplified(-5);
+//     }
+// }
 
 
 void Car::setColor(const glm::vec3& newColor) {

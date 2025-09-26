@@ -29,8 +29,8 @@ public:
     // Controls
     void updateAcceleration(const glm::vec3& deltaAcceleration);
     void addBreak(bool);
-    void turnLeft(bool);
-    void turnRight(bool);
+    // void turnLeft(bool);
+    // void turnRight(bool);
 
     // PhaseRegisters
     void setThrottle(bool);

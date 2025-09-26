@@ -16,13 +16,14 @@
 #include "car.h"
 #include "shader.h"
 #include "circuit.h"
+// #include "dashboard.h"
 
 // Window dimensions (initial values)
 GLint WIDTH = 800, HEIGHT = 800;
 
 // Camera variables
 // Initial camera position
-glm::vec3 cameraPos   = glm::vec3(-8.0f, 2.0f, 0.0f); 
+glm::vec3 cameraPos   = glm::vec3(-30.0f, 2.0f, 0.0f); 
 // Camera looks towards negative Z-axis by default
 glm::vec3 cameraFront = glm::vec3(1.0f, -0.2f, 0.0f); 
 // Camera's up direction
@@ -34,6 +35,7 @@ int cameraMode = 0;
 // Create a Car object
 Car myCar;
 Circuit ground;
+// Dashboard dashboard;
 
 // Movement speed for camera and ball
 float cameraSpeed = 2.5f; // Units per second
@@ -106,7 +108,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         // Camera mode switch (C key)
         if (key == GLFW_KEY_C) {
             cameraMode = !cameraMode; // Toggle between 0 and 1
-            std::cout << "Camera mode: " << (cameraMode == 0 ? "Static" : "Follow Car") << std::endl;
+            // std::cout << "Camera mode: " << (cameraMode == 0 ? "Static" : "Follow Car") << std::endl;
         }
     }
 }
@@ -125,6 +127,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     WIDTH = width; // Update global WIDTH
     HEIGHT = height; // Update global HEIGHT
+    // dashboard.setWindowSize(WIDTH, HEIGHT);
 }
 
 int main() {
@@ -175,6 +178,9 @@ int main() {
 
     // Define the rendering area within the window
     glViewport(0, 0, WIDTH, HEIGHT);
+    
+    // Setup dashboard
+    // dashboard.setWindowSize(WIDTH, HEIGHT);
 
     // Initial model matrix for the static sphere (Sphere 1)
     glm::mat4 model1 = glm::mat4(1.0f); 
@@ -185,7 +191,7 @@ int main() {
     modelCube = glm::translate(modelCube, glm::vec3(1.0f, 0.0f, 0.0f)); // Position cube to the right
 
     // load the customized shader
-    Shader carshader;
+    Shader carshader("assets/shaders/carShader.vert", "assets/shaders/carShader.frag");
 
     // Load an OBJ model (replace with your actual .obj file)
 
@@ -222,7 +228,6 @@ int main() {
 
         myCar.update(deltaTime);
 
-        // Rendering commands
         // Clear the color buffer with a dark teal background
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f); 
         // Clear both color and depth buffers
@@ -231,7 +236,7 @@ int main() {
         // --- Projection Matrix (calculated once per frame, then passed to both shaders) ---
         // Create a perspective projection matrix
         // Parameters: Field of View (45 degrees), Aspect Ratio, Near Plane (0.1), Far Plane (100.0)
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(50.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
 
         // --- View Matrix (Camera Transformation, calculated once per frame) ---
         // Create the view matrix using the LookAt function
@@ -245,11 +250,10 @@ int main() {
             cameraPos = carPos + carOrientation * glm::vec3(-8.0f, 2.0f, 0.0f); // Follow behind and above the car
             viewTarget = carPos; // Look at the car
         }
-        std::cout<<"camera mode: "<<cameraMode<<std::endl;
         
         glm::mat4 view = glm::lookAt(cameraPos, viewTarget, cameraUp);
 
-        glBindVertexArray(0); // Unbind VAO to prevent accidental modification
+        glBindVertexArray(0); // Unbind VAO to prevent accidental modification from the last frame
 
         carshader.use();
         carshader.setMat4("view", view);
@@ -260,6 +264,11 @@ int main() {
         // printMat4(view);
         ground.draw(carshader);
         myCar.draw(carshader);
+
+        // Render dashboard with current RPM and speed
+        int rpm = static_cast<int>(glm::length(myCar.getVelocity()) * 20);
+        float speed = glm::length(myCar.getVelocity()) * 3.6f; // Convert m/s to km/h
+        // dashboard.render(rpm, speed);
 
         // Swap front and back buffers (double buffering)
         glfwSwapBuffers(window);

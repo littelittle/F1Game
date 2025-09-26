@@ -12,17 +12,27 @@ extern const char* fragmentShaderSource;
 
 GLuint compileShader(const char* shaderSource, GLenum shaderType);
 
-GLuint createShaderProgram();
+// GLuint createShaderProgram();
+
+GLuint createShaderProgram(const char* vertexShaderPath, const char* fragmentShaderPath);
 
 class Shader {
     public:
         GLuint ID; // Program ID
     
-        Shader() {
-            ID = createShaderProgram();
+        // Shader() {
+        //     ID = createShaderProgram();
+        //     if (ID == 0) {
+        //         std::cerr << "Failed to create shader program." << std::endl;
+        //     }
+        // }
+
+        Shader(const char* vertexShaderPath, const char* fragmentShaderPath) {
+            ID = createShaderProgram(vertexShaderPath, fragmentShaderPath);
             if (ID == 0) {
                 std::cerr << "Failed to create shader program." << std::endl;
             }
+
         }
     
         // 激活 Shader
