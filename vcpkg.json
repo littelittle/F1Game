@@ -5,6 +5,7 @@
     "glew",
     "glfw3",
     "glm",
-    "openal-soft"
+    "openal-soft",
+    "inih"
   ]
 }

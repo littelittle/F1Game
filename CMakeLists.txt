@@ -18,6 +18,7 @@ add_executable(F1
     src/wheel.cpp
     src/utils.cpp
     src/audio.cpp
+    src/front.cpp
     # src/dashboard.cpp
                 )
 

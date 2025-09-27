@@ -27,5 +27,7 @@ void main()
 
     // 最终颜色 = 环境光 + 漫反射 (这里没有包含镜面光和纹理，你可以根据需要添加)
     // 如果有纹理，可能是 FragColor = vec4(ambient + diffuse, 1.0) * texture(ourTexture, TexCoord);
-    FragColor = vec4(ambient + diffuse + objectColor, 1.0); 
+    vec3 lighting = ambient + diffuse;
+    vec3 result = lighting * objectColor;
+    FragColor = vec4(result, 1.0); 
 }

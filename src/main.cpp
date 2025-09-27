@@ -73,21 +73,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             cameraPos -= cameraSpeed * deltaTime * cameraUp;
 
         // Brake & Throttle & Wheel controls (Arrow keys)
-        if (key == GLFW_KEY_UP){ // Move ball up
+        if (key == GLFW_KEY_UP){ 
             myCar.setThrottle(true);
-            // myCar.updateAcceleration({1, 0, 0});
         }
-        if (key == GLFW_KEY_DOWN){ // Move ball down
+        if (key == GLFW_KEY_DOWN){ 
             myCar.setBreak(true);
-            // myCar.addBreak(true);
         }
-        if (key == GLFW_KEY_LEFT){ // Move ball left
+        if (key == GLFW_KEY_LEFT){ 
             myCar.setDeltaLeft(true);
-            // myCar.turnLeft(true);
         }
-        if (key == GLFW_KEY_RIGHT){ // Move ball right
+        if (key == GLFW_KEY_RIGHT){ 
             myCar.setDeltaRight(true);
-            // myCar.turnRight(true);
         }
         
     }
@@ -211,7 +207,7 @@ int main() {
     // Initial car properties
     // myCar.setPosition(glm::vec3(0.0f, 0.0f, -5.0f));
 
-    glm::vec3 lightPos(0.0f, 2.0f, 0.0f); // 你的光源位置
+    glm::vec3 lightPos(0.0f, 20.0f, 0.0f); // 你的光源位置
     glm::vec3 lightColor(1.0f, 1.0f, 1.0f); // 光源颜色
 
     double lastFrameTime = glfwGetTime();

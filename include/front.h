@@ -5,18 +5,20 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <GL/glew.h>
-#include <shader.h>
-#include <wheel.h>
-#include <front.h>
-#include "audio.h"
+#include <Shader.h>
+#include <Wheel.h>
 
-#define FRONTAXIS 2.7
+class Car;
 
-class Car {
+#define LEFTWHEEL 1
+#define RIGHTWHEEL 2
+#define MAXSTEERINGANGLE 30.0f
+
+
+class Front {
 public:
-    Car();
-    ~Car();
-
+    Front(int wheelConfig, const Car& car);
+    ~Front();
     void draw(Shader& carshader);
     void update(float deltaTime);
  
@@ -30,52 +32,34 @@ public:
     // Controls
     void updateAcceleration(const glm::vec3& deltaAcceleration);
     void addBreak(bool);
-    // void turnLeft(bool);
-    // void turnRight(bool);
-
-    // PhaseRegisters
-    void setThrottle(bool);
-    void setBreak(bool);
-    void setDeltaLeft(bool);
-    void setDeltaRight(bool);
+    void turnLeft(bool);
+    void turnRight(bool);
 
     // Getters (const-correct for safety)
     glm::vec3 getPosition() const { return position; }
-    glm::vec3 getVelocity() const { return velocity; }
-    glm::vec3 getAcceleration() const { return acceleration; }
     glm::vec3 getColor() const { return color; }
     glm::mat4 getModelMatrix() const { return modelMatrix; }
-    float getDeltaTime() const {return deltaTime; }
+
 
     // Model loading and GPU buffer setup
     bool loadModel(); // Returns true on success
     void setupGPUBuffers(); // Pushes loaded vertices/indices to GPU
 
 private:
+    const Car& car;
+
+    Wheel wheel; 
+
     glm::vec3 position;
-    glm::vec3 velocity;
-    glm::vec3 acceleration; // Added
     glm::vec3 color;        // Added
     glm::vec3 scale;        // Optional, added
+    glm::vec3 shift;        // the shift from the center of the car
     
-    // Phase register
-    bool throttleStatus;
-    bool breakStatus;
-    bool leftStatus;
-    bool rightStatus;
-    float angularVelocity;
-    float angle;
+    int wheelConfig;
     float breakTime;
-    float deltaAngle;
-    float deltaTime;
-    
-    // Audio
-    CarAudio carAudio;
-
-    Front frontLeft;
-    Front frontRight;
-    Wheel rearLeft;
-    Wheel rearRight;
+    bool breakStatus;
+    float turning;
+    float angle;
 
     // Model Data
     std::vector<glm::vec3> vertices; 
@@ -91,7 +75,10 @@ private:
 
     // Transformation Matrix
     glm::mat4 modelMatrix; // Added
-    void updateModelMatrixT(); // Helper to update the modelMatrix based on position, rotation, scale
-    void rotateModelMatrixAroundY();
-    void setPhaseBack();
+    glm::mat4 steeringMatrix;
+    glm::mat4 steeringMatrixX;
+    void updateModelMatrix(); // Helper to update the modelMatrix based on position, rotation, scale
+    void rotateModelMatrixAroundY_Simplified(float angleDegree);
+
+    friend class Car;
 };

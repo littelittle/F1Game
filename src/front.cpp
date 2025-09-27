@@ -1,38 +1,33 @@
-#include <wheel.h>
+#include <front.h>
+#include <Wheel.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <filesystem>
-#include <utils.h>
+#include "utils.h"
 #include "car.h"
-#include <front.h>
-#include <INIReader.h>
+#include "INIReader.h"
 
 
-Wheel::Wheel(int wConfig, const Car& car, const Front* front)
+Front::Front(int wConfig, const Car& car)
     : car(car),
-      front(front),
       position(0.0f, 0.0f, 0.0f),
       color(0.0f, 0.0f, 0.0f), // Default black color
       scale(1.0f, 1.0f, 1.0f),
       angle(0.0f),
-      turning(0.0f)
+      turning(0.0f),
+      wheel(wConfig, car, this)
 {
     wheelConfig = wConfig;
     modelMatrix = glm::mat4(1.0f);
     steeringMatrix = glm::mat4(1.0f);
     updateModelMatrix();
-    if (front != nullptr){
-        shift = (wConfig==LEFTWHEEL) ? glm::vec3(2.521f, -0.261f, 1.2f) : glm::vec3(2.521f, -0.261f, -1.2f);
-    }
-    else{
-        shift = (wConfig==LEFTWHEEL) ? glm::vec3(-3.672f, -0.261f, 1.2f) : glm::vec3(-3.672f, -0.261f, -1.2f);
-    }
+    shift = (wConfig==LEFTWHEEL) ? glm::vec3(2.521f, -0.2621f, 1.2f) : glm::vec3(2.521f, -0.2621f, -1.2f);
 }
 
-Wheel::~Wheel() {
+Front::~Front() {
     if (VAO != 0) {
         glDeleteVertexArrays(1, &VAO);
     }
@@ -51,32 +46,15 @@ Wheel::~Wheel() {
     }
 }
 
-void Wheel::updateModelMatrix() {
-    if (front != nullptr){
-        modelMatrix = front->getModelMatrix();
-    }
-    else{
-        modelMatrix = car.getModelMatrix();
-    }
+void Front::updateModelMatrix() {
+    modelMatrix = car.getModelMatrix();
 
-    
-    float angularSpeed = glm::length(car.getVelocity())/0.65;
-
-    turning += angularSpeed * car.getDeltaTime();
-    std::cout << turning <<car.getDeltaTime() << std::endl;
-
-    glm::mat4 translate_to_origin = glm::translate(glm::mat4(1.0f), -shift);
-    glm::mat4 rotation_matrixX = glm::rotate(glm::mat4(1.0f), turning, glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 translate_back = glm::translate(glm::mat4(1.0f), shift);
-
-    steeringMatrixX = translate_back * rotation_matrixX * translate_to_origin;
-
-    modelMatrix = modelMatrix * steeringMatrixX;
+    modelMatrix = modelMatrix * steeringMatrix; 
 
     modelMatrix = glm::scale(modelMatrix, scale);
 }
 
-void Wheel::setupGPUBuffers() {
+void Front::setupGPUBuffers() {
     if (vertices.empty()) {
         std::cerr << "Error: No vertex data to set up GPU buffers. Load a model first." << std::endl;
         return;
@@ -109,21 +87,15 @@ void Wheel::setupGPUBuffers() {
 
     glBindVertexArray(0);
 
+    wheel.setupGPUBuffers();
+
     std::cout << "GPU buffers for car model set up successfully." << std::endl;
 }
 
-bool Wheel::loadModel() {
+bool Front::loadModel() {
     const char* modelPath;
-    if (front != nullptr){
-        if(wheelConfig==LEFTWHEEL) modelPath = "assets/F1_car/newC44/frontleft/frontleft.obj";
-        else modelPath = "assets/F1_car/newC44/frontright/frontright.obj";
-        std::cout << modelPath << std::endl;
-    }
-    else {
-        if(wheelConfig==LEFTWHEEL) modelPath = "assets/F1_car/newC44/rearleft/rearleft.obj";
-        else modelPath = "assets/F1_car/newC44/rearright/rearright.obj";
-        std::cout << modelPath << std::endl;
-    }
+    if(wheelConfig==LEFTWHEEL) modelPath = "assets/F1_car/newC44/frontleft/frontleftbreak.obj";
+    else modelPath = "assets/F1_car/newC44/frontright/frontrightbreak.obj";
     std::ifstream file(modelPath);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open OBJ file: " << modelPath << std::endl;
@@ -222,16 +194,18 @@ bool Wheel::loadModel() {
               << ", UVs: " << uvs.size()
               << ", Normals: " << normals.size() << std::endl;
 
+    wheel.loadModel();
+
     return true;
 }
 
-void Wheel::draw(Shader& carshader) {
+void Front::draw(Shader& carshader) {
 
     // insure that this is updated
     updateModelMatrix();
 
     if (VAO == 0) {
-        std::cerr << "Warning: Wheel VAO is not set up. Call setupGPUBuffers() first." << std::endl;
+        std::cerr << "Warning: Car VAO is not set up. Call setupGPUBuffers() first." << std::endl;
         return;
     }
 
@@ -253,5 +227,27 @@ void Wheel::draw(Shader& carshader) {
     }
     glBindVertexArray(0); // Unbind VAO
 
+    wheel.draw(carshader);
+
     // glUseProgram(0); // Unuse shader program.
+}
+
+void Front::rotateModelMatrixAroundY_Simplified(float angleDegree){
+
+    float trueSteeringAngle;
+
+    // crop to the MAXSTEERANGLE
+    if (angleDegree > 0) trueSteeringAngle = std::min(std::abs(angleDegree), MAXSTEERINGANGLE - angle);
+    else trueSteeringAngle = -std::min(std::abs(angleDegree), MAXSTEERINGANGLE + angle);
+
+    angle += trueSteeringAngle;
+
+    glm::mat4 translate_to_origin = glm::translate(glm::mat4(1.0f), -shift);
+
+    glm::mat4 rotation_matrixY = glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotation_matrixX = glm::rotate(glm::mat4(1.0f), turning, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::mat4 translate_back = glm::translate(glm::mat4(1.0f), shift);
+
+    steeringMatrix = translate_back * rotation_matrixY * rotation_matrixX * translate_to_origin;
 }

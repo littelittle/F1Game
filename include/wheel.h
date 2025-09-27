@@ -8,14 +8,25 @@
 #include <Shader.h>
 
 class Car;
+class Front;
 
 #define LEFTWHEEL 1
 #define RIGHTWHEEL 2
 #define MAXSTEERINGANGLE 30.0f
 
+namespace paths {
+    const std::string BASE_PATH = "assets/F1_car/newC44/";
+    const std::string TIRE_INI_SUFFIX = "/tire.ini";
+
+    const std::string FRONTLEFT  = BASE_PATH + "frontleft" + TIRE_INI_SUFFIX;
+    const std::string FRONTRIGHT = BASE_PATH + "frontright" + TIRE_INI_SUFFIX;
+    const std::string REARLEFT   = BASE_PATH + "rearleft" + TIRE_INI_SUFFIX;
+    const std::string REARRIGHT  = BASE_PATH + "rearright" + TIRE_INI_SUFFIX;
+}
+
 class Wheel {
 public:
-    Wheel(int wheelConfig, const Car& car);
+    Wheel(int wheelConfig, const Car& car, const Front* front=nullptr);
     ~Wheel();
     void draw(Shader& carshader);
     void update(float deltaTime);
@@ -43,6 +54,7 @@ public:
 
 private:
     const Car& car;
+    const Front* front;
     glm::vec3 position;
     glm::vec3 color;        // Added
     glm::vec3 scale;        // Optional, added
@@ -51,7 +63,7 @@ private:
     int wheelConfig;
     float breakTime;
     bool breakStatus;
-
+    float turning;
     float angle;
 
     // Model Data
@@ -69,8 +81,10 @@ private:
     // Transformation Matrix
     glm::mat4 modelMatrix; // Added
     glm::mat4 steeringMatrix;
+    glm::mat4 steeringMatrixX;
     void updateModelMatrix(); // Helper to update the modelMatrix based on position, rotation, scale
     void rotateModelMatrixAroundY_Simplified(float angleDegree);
 
     friend class Car;
+    friend class Front;
 };

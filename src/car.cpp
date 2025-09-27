@@ -17,13 +17,15 @@ Car::Car()
       breakTime(0.0f),
       angularVelocity(0.0f),
       angle(0.0f),
+      deltaAngle(0.0f),
       throttleStatus(false), breakStatus(false), leftStatus(false), rightStatus(false),
       carAudio(),
-      leftWheel(LEFTWHEEL, *this), rightWheel(RIGHTWHEEL, *this),
+      frontLeft(LEFTWHEEL, *this), frontRight(RIGHTWHEEL, *this),
+      rearLeft(LEFTWHEEL, *this), rearRight(RIGHTWHEEL, *this),
       VAO(0), vertexVBO(0), uvVBO(0), normalVBO(0), textureID(0)
 {
     modelMatrix = glm::mat4(1.0f);
-    updateModelMatrix(); // Initialize model matrix
+    updateModelMatrixT(); // Initialize model matrix
 }
 
 // Destructor: Clean up OpenGL resources
@@ -50,6 +52,7 @@ Car::~Car() {
 
 // Update the car's state based on time
 void Car::update(float deltaTime) {
+    Car::deltaTime = deltaTime;
     // Apply throttle force if throttle is pressed
     if (throttleStatus) {
         glm::vec3 forwardDirection = glm::normalize(glm::vec3(modelMatrix[0]));
@@ -76,21 +79,17 @@ void Car::update(float deltaTime) {
     // Apply steering forces if turning
     if (leftStatus || rightStatus) {
         float steeringAngle = leftStatus ? 1.0f : -1.0f;
-        leftWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
-        rightWheel.rotateModelMatrixAroundY_Simplified(steeringAngle);
+        frontLeft.rotateModelMatrixAroundY_Simplified(steeringAngle);
+        frontRight.rotateModelMatrixAroundY_Simplified(steeringAngle);
     }
     
     // Euler integration for physics
     velocity += acceleration * deltaTime;
-    // std::cout << "Velocity: " << glm::length(velocity) << " Acceleration:"<< glm::length(acceleration) << std::endl;
-
 
     // for the angular velocity
-    angularVelocity = std::tan(glm::radians(leftWheel.angle)) * glm::length(velocity) / FRONTAXIS;
-    angle = angularVelocity * deltaTime;
-    // std::cout << "wheelangle: " << leftWheel.angle << ", Angular velocity: " << angularVelocity << ", Angle: " << angle << std::endl;
-    // std::cout << "velocity: " << glm::length(velocity) << std::endl;
-    rotateModelMatrixAroundY_Simplified(angle);
+    angularVelocity = std::tan(glm::radians(frontLeft.angle)) * glm::length(velocity) / FRONTAXIS;
+    deltaAngle = angularVelocity * deltaTime;
+    rotateModelMatrixAroundY();
     
     // Clamp velocity to reasonable limits
     float maxSpeed = 300.0f;
@@ -99,14 +98,9 @@ void Car::update(float deltaTime) {
     }
     
     position += velocity * deltaTime;
-    
-    // Reset acceleration for next frame
     acceleration = glm::vec3(0.0f);
-
-    // Update model matrix after position changes
-    updateModelMatrix();
+    updateModelMatrixT();
     
-    // Update audio based on car state
     float throttleIntensity = throttleStatus ? 1.0f : 0.0f;
     float brakeIntensity = breakStatus ? 1.0f : 0.0f;
     int rpm = int(glm::length(velocity) * 20) ; // Convert speed to RPM
@@ -114,47 +108,37 @@ void Car::update(float deltaTime) {
     carAudio.update(throttleIntensity, brakeIntensity, rpm);
 }
 
-// Draw the car
 void Car::draw(Shader& carshader) {
     if (VAO == 0) {
         std::cerr << "Warning: Car VAO is not set up. Call setupGPUBuffers() first." << std::endl;
         return;
     }
 
-    // Use the shader program
-    carshader.use();
-
     // Pass the model matrix to the shader
     carshader.setMat4("model", modelMatrix);
     carshader.setVec3("objectColor", color);
-
-    // JUST FOR DEBUGGING
-    // for (int i = 0; i < 4; ++i) {
-    //     for (int j = 0; j < 4; ++j) {
-    //         std::cout << modelMatrix[j][i] << "\t";
-    //     }
-    //     std::cout << std::endl;
-    // }
 
     // Bind the VAO and draw
     glBindVertexArray(VAO);
     if (!indices.empty()) {
         glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+        std::cout<<"indices is not empty: "<< std::endl;
     } else {
         // If no indices, assume a simple array of vertices (e.g., triangle list)
         glDrawArrays(GL_TRIANGLES, 0, vertices.size()); // Assuming 3 floats per vertex position
     }
     glBindVertexArray(0); // Unbind VAO
 
-    leftWheel.draw(carshader);
-    rightWheel.draw(carshader);
+    frontLeft.draw(carshader);
+    frontRight.draw(carshader);
+    rearLeft.draw(carshader);
+    rearRight.draw(carshader);
     // glUseProgram(0); // Unuse shader program.
 }
 
-// Setter methods
 void Car::setPosition(const glm::vec3& newPosition) {
     position = newPosition;
-    updateModelMatrix();
+    updateModelMatrixT();
 }
 
 void Car::setVelocity(const glm::vec3& newVelocity) {
@@ -170,38 +154,11 @@ void Car::addBreak(bool status){
     breakStatus = status;
 }
 
-void Car::rotateModelMatrixAroundY_Simplified(float angleRad) {
-    // glm::rotate(matrix, angle_radians, axis_vector)
-    // 直接对 modelMatrix 进行旋转操作
-    // 角度转换为弧度
-
-    // modelMatrix = glm::rotate(modelMatrix, glm::radians(angleDegree), glm::vec3(0.0f, 1.0f, 0.0f));
-
-    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angleRad, glm::vec3(0.0f, 1.0f, 0.0f));
-
-    modelMatrix = modelMatrix * rotationMatrix; 
-
+void Car::rotateModelMatrixAroundY() {
+    angle += deltaAngle;
+    modelMatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f));
     velocity = glm::mat3(modelMatrix) * glm::length(velocity) * glm::vec3({1,0,0});
 }
-
-// void Car::turnLeft(bool status){
-//     if (status){
-//         // std::cout << "left!" << modelMatrix[0][0] << std::endl;
-//         // rotateModelMatrixAroundY_Simplified(1);
-//         // std::cout << "finish!" << modelMatrix[0][0] << std::endl;
-//         leftWheel.rotateModelMatrixAroundY_Simplified(5);
-//         rightWheel.rotateModelMatrixAroundY_Simplified(5);
-//     }
-// }
-
-// void Car::turnRight(bool status){
-//     if (status){
-//         // rotateModelMatrixAroundY_Simplified(-1);
-//         leftWheel.rotateModelMatrixAroundY_Simplified(-5);
-//         rightWheel.rotateModelMatrixAroundY_Simplified(-5);
-//     }
-// }
-
 
 void Car::setColor(const glm::vec3& newColor) {
     color = newColor;
@@ -209,7 +166,7 @@ void Car::setColor(const glm::vec3& newColor) {
 
 void Car::setScale(const glm::vec3& newScale) {
     scale = newScale;
-    updateModelMatrix();
+    updateModelMatrixT();
 }
 
 bool Car::loadModel() {
@@ -218,7 +175,7 @@ bool Car::loadModel() {
         std::cerr << "Warning: Failed to initialize car audio system" << std::endl;
     }
     
-    const char* mainModelPath = "assets/F1_car/C44/seperated_mainbody.obj";
+    const char* mainModelPath = "assets/F1_car/newC44/mainbody/mainbody.obj";
     std::ifstream file(mainModelPath);
     if (!file.is_open()) {
         std::cerr << "Error: Could not open OBJ file: " << mainModelPath << std::endl;
@@ -317,8 +274,10 @@ bool Car::loadModel() {
               << ", UVs: " << uvs.size()
               << ", Normals: " << normals.size() << std::endl;
 
-    leftWheel.loadModel();
-    rightWheel.loadModel();
+    frontLeft.loadModel();
+    frontRight.loadModel();
+    rearLeft.loadModel();
+    rearRight.loadModel();
 
     return true;
 }
@@ -359,8 +318,10 @@ void Car::setupGPUBuffers() {
 
     std::cout << "GPU buffers for car model set up successfully." << std::endl;
 
-    leftWheel.setupGPUBuffers();
-    rightWheel.setupGPUBuffers();
+    frontLeft.setupGPUBuffers();
+    frontRight.setupGPUBuffers();
+    rearLeft.setupGPUBuffers();
+    rearRight.setupGPUBuffers();
 }
 
 // Dummy texture loading for demonstration (you'd use a real image loading library)
@@ -391,10 +352,8 @@ void Car::setTexture(const std::string& texturePath) {
 }
 
 // Private helper to update the model matrix
-void Car::updateModelMatrix() {
+void Car::updateModelMatrixT() {
     modelMatrix[3] = glm::vec4(position, 1.0f);
-    // Add rotation (e.g., based on velocity direction or explicit rotation variables)
-    // modelMatrix = glm::rotate(modelMatrix, glm::radians(rotationAngle), rotationAxis);
     modelMatrix = glm::scale(modelMatrix, scale);
 }
 
